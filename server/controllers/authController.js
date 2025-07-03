@@ -1,52 +1,33 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const db = require('../config/db');
+const authService = require('../services/authService');
 
-const SECRET_KEY = 'jwt_secret';
-
-const register = (req, res) => {
+const register = async (req, res) => {
   const { name, email, password } = req.body;
-
-  db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
-    if (err) return res.status(500).json({ msg: 'DB Error',err });
-    if (results.length > 0) return res.status(400).json({ msg: 'Email already exists' });
-
-    const hashedPassword = bcrypt.hashSync(password, 10);
-    db.query(
-      'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
-      [name, email, hashedPassword],
-      (err, result) => {
-        if (err) return res.status(500).json({ msg: 'Insert Failed' });
-        res.status(201).json({ msg: 'User Registered' });
-      }
-    );
-  });
+  try {
+    const result = await authService.registerUser(name, email, password);
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(error.status || 500).json({ msg: error.msg, err: error.err });
+  }
 };
 
-const login = (req, res) => {
+const login = async (req, res) => {
   const { email, password } = req.body;
-
-  db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
-    if (err || results.length === 0)
-      return res.status(401).json({ msg: 'Invalid email or password' });
-
-    const user = results[0];
-    const match = bcrypt.compareSync(password, user.password);
-    if (!match) return res.status(401).json({ msg: 'Invalid email or password' });
-
-    const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: '1h' });
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
-  });
+  try {
+    const result = await authService.loginUser(email, password);
+    res.json(result);
+  } catch (error) {
+    res.status(error.status || 500).json({ msg: error.msg });
+  }
 };
 
-const getProfile = (req, res) => {
-  db.query('SELECT id, name, email FROM users WHERE id = ?', [req.user.id], (err, results) => {
-    if (err || results.length === 0)
-      return res.status(404).json({ msg: 'User not found' });
-    res.json(results[0]);
-  });
+const getProfile = async (req, res) => {
+  try {
+    const profile = await authService.getUserProfile(req.user.id);
+    res.json(profile);
+  } catch (error) {
+    res.status(error.status || 500).json({ msg: error.msg });
+  }
 };
-
 
 module.exports = {
   register,

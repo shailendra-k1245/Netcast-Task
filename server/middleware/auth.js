@@ -1,5 +1,7 @@
+// server/middleware/auth.js
+require('dotenv').config();
 const jwt = require('jsonwebtoken');
-const SECRET_KEY = 'jwt_secret';
+const SECRET_KEY = process.env.JWT_SECRET;
 
 module.exports = function (req, res, next) {
   const token = req.header('Authorization')?.split(' ')[1];

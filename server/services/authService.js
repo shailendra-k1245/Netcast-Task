@@ -1,8 +1,9 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const queryAsync = require('../utils/queryAsync');
+require('dotenv').config();
 
-const SECRET_KEY = 'jwt_secret';
+const SECRET_KEY = process.env.JWT_SECRET;
 
 const registerUser = async (name, email, password) => {
   try {
